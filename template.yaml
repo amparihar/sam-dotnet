@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: sam-dnc-boilerplate
+Transform: AWS::Serverless-2016-10-31
+
+Parameters: 
+  ServiceName:  
+    Type: String
+    Default: sam-items-api
+    Description: Service Name
+
+  ApiStageName: 
+    Type: String
+    Default: dev
+    AllowedValues: 
+      - dev
+      - stage
+      - perf
+      - prod
+    Description: Stage Param
+
+Globals:
+  Function:
+    Runtime: dotnetcore3.1
+    MemorySize: 128
+    Timeout: 10
+    Environment:
+      Variables:
+        ITEM_TABLE_NAME: !Ref ItemTable
+        DYNAMODB_SERVICEURL: !Sub https://dynamodb.${AWS::Region}.amazonaws.com
+  Api:
+    Auth:
+        DefaultAuthorizer: basicAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          basicAuthorizer:
+            FunctionPayloadType: TOKEN
+            FunctionArn: !GetAtt lambdaAuthorizer.Arn
+            Identity:
+              Header: Authorization
+              #ValidationExpression: Bearer *
+    Cors: 
+      AllowMethods: "'*'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
+
+
+Resources:
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref ApiStageName
+        
+      Models:
+        Item:
+          type: object
+          required:
+            - id
+            - name
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+  
+  getAllItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/
+      Handler: sam-dnc::Lambda.Functions.GetItemsFunction::Get
+      Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
+      Policies: 
+        - DynamoDBReadPolicy:
+            TableName: !Ref ItemTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /api
+            Method: GET
+            RestApiId:
+              Ref: ApiGatewayApi
+
+  lambdaAuthorizer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/
+      Handler: sam-dnc::Lambda.Functions.Authorizer::Authorize
+
+  ItemTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub "${ServiceName}-Item-${ApiStageName}"
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+Outputs:
+  AllItemsFunction:
+    Description: "Get All Items Lambda Function ARN"
+    Value: !GetAtt getAllItemsFunction.Arn
+  ItemsTable:
+    Description: "Item DynamoDB Table Name"
+    Value: !Ref ItemTable
+  ApiGateway:
+    Description: "API EndPoint"
+    Value: !Sub "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}"
+
+
