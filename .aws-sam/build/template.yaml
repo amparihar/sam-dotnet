@@ -65,12 +65,12 @@ Resources:
               type: string
             name:
               type: string
-  getItemFunction:
+  getItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: getItemFunction
-      Handler: sam-dnc::Lambda.Functions.GetItemFunction::Run
-      Description: Get All Items
+      CodeUri: getItemsFunction
+      Handler: sam-dnc::Lambda.Functions.GetItemsFunction::Run
+      Description: Query Items by id and key
       Policies:
       - DynamoDBReadPolicy:
           TableName:
@@ -79,8 +79,8 @@ Resources:
         Api:
           Type: Api
           Properties:
-            Path: /api
-            Method: GET
+            Path: /api/query
+            Method: POST
             RestApiId:
               Ref: ApiGatewayApi
   saveItemFunction:
@@ -128,14 +128,14 @@ Resources:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
 Outputs:
-  GetItemFunction:
-    Description: Get All Items Lambda Function ARN
+  GetItemsFunction:
+    Description: Query Items Fn ARN
     Value:
       Fn::GetAtt:
-      - getItemFunction
+      - getItemsFunction
       - Arn
   SaveItemFunction:
-    Description: Save Items Lambda Function ARN
+    Description: Save Items Fn ARN
     Value:
       Fn::GetAtt:
       - saveItemFunction
