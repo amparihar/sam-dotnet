@@ -9,11 +9,11 @@ using Cloud.AWS.DynamoDb;
 
 namespace Lambda.Functions
 {
-    public class GetItemsFunction
+    public class GetItemFunction
     {
         private readonly DynamoDBService _dbService;
 
-        public GetItemsFunction()
+        public GetItemFunction()
         {
             _dbService = new DynamoDBService();
         }
@@ -24,7 +24,7 @@ namespace Lambda.Functions
             return new APIGatewayProxyResponse
             {
                 StatusCode = 200,
-                Body = JsonConvert.SerializeObject(_dbService.DbClient),
+                Body = JsonConvert.SerializeObject(request),
                 Headers = new Dictionary<string, string>{
                   { "Content-Type", "application/json" },
                   { "Access-Control-Allow-Origin","*" }

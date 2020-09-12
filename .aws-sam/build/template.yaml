@@ -52,20 +52,24 @@ Resources:
         Ref: ApiStageName
       Models:
         SaveItemRequestValidator:
+          $schema: http://json-schema.org/draft-07/schema#
           type: object
           required:
           - id
+          - key
           - name
           properties:
             id:
               type: string
+            key:
+              type: string
             name:
               type: string
-  getAllItemsFunction:
+  getItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: getAllItemsFunction
-      Handler: sam-dnc::Lambda.Functions.GetItemsFunction::Run
+      CodeUri: getItemFunction
+      Handler: sam-dnc::Lambda.Functions.GetItemFunction::Run
       Description: Get All Items
       Policies:
       - DynamoDBReadPolicy:
@@ -113,18 +117,22 @@ Resources:
       AttributeDefinitions:
       - AttributeName: id
         AttributeType: S
+      - AttributeName: key
+        AttributeType: S
       KeySchema:
       - AttributeName: id
         KeyType: HASH
+      - AttributeName: key
+        KeyType: RANGE
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
 Outputs:
-  GetAllItemsFunction:
+  GetItemFunction:
     Description: Get All Items Lambda Function ARN
     Value:
       Fn::GetAtt:
-      - getAllItemsFunction
+      - getItemFunction
       - Arn
   SaveItemFunction:
     Description: Save Items Lambda Function ARN

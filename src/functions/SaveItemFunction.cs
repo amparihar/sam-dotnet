@@ -42,6 +42,7 @@ namespace Lambda.Functions
                     {
                         var newItem = new Document();
                         newItem["id"] = requestModel.Id;
+                        newItem["key"] = requestModel.Key;
                         newItem["name"] = requestModel.Name;
                         await ItemTable.PutItemAsync(newItem);
                         return ResponseHandler.ProcessResponse(HttpStatusCode.Created, JsonConvert.SerializeObject(requestModel));
