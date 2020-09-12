@@ -66,8 +66,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./src/
-      Handler: sam-dnc::Lambda.Functions.GetItemsFunction::Get
-      Description: A simple example includes a HTTP get method to get all items from a DynamoDB table.
+      Handler: sam-dnc::Lambda.Functions.GetItemsFunction::Run
+      Description: Get All Items
       Policies: 
         - DynamoDBReadPolicy:
             TableName: !Ref ItemTable
@@ -77,8 +77,24 @@ Resources:
           Properties:
             Path: /api
             Method: GET
-            RestApiId:
-              Ref: ApiGatewayApi
+            RestApiId: !Ref ApiGatewayApi
+
+  saveItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/
+      Handler: sam-dnc::Lambda.Functions.SaveItemFunction::Run
+      Description: Save Item
+      Policies: 
+        - DynamoDBWritePolicy:
+            TableName: !Ref ItemTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /api
+            Method: POST
+            RestApiId: !Ref ApiGatewayApi
 
   lambdaAuthorizer:
     Type: AWS::Serverless::Function
@@ -102,9 +118,12 @@ Resources:
         WriteCapacityUnits: 1
 
 Outputs:
-  AllItemsFunction:
+  GetAllItemsFunction:
     Description: "Get All Items Lambda Function ARN"
     Value: !GetAtt getAllItemsFunction.Arn
+  SaveItemFunction:
+    Description: "Save Items Lambda Function ARN"
+    Value: !GetAtt saveItemFunction.Arn
   ItemsTable:
     Description: "Item DynamoDB Table Name"
     Value: !Ref ItemTable
