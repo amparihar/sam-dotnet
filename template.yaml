@@ -27,6 +27,7 @@ Globals:
       Variables:
         ITEM_TABLE_NAME: !Ref ItemTable
         DYNAMODB_SERVICEURL: !Sub https://dynamodb.${AWS::Region}.amazonaws.com
+        JWT_ACCESS_TOKEN: random hexa crypro 
   Api:
     Auth:
         DefaultAuthorizer: basicAuthorizer
@@ -51,7 +52,7 @@ Resources:
       StageName: !Ref ApiStageName
         
       Models:
-        Item:
+        SaveItemRequestValidator:
           type: object
           required:
             - id
@@ -85,8 +86,10 @@ Resources:
       CodeUri: ./src/
       Handler: sam-dnc::Lambda.Functions.SaveItemFunction::Run
       Description: Save Item
+      MemorySize: 512
+      Timeout: 120
       Policies: 
-        - DynamoDBWritePolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
       Events:
         Api:
@@ -95,6 +98,9 @@ Resources:
             Path: /api
             Method: POST
             RestApiId: !Ref ApiGatewayApi
+            # RequestModel:
+            #   Model: SaveItemRequestValidator
+            #   Required: True
 
   lambdaAuthorizer:
     Type: AWS::Serverless::Function

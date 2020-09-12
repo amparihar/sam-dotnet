@@ -1,12 +1,16 @@
 
 using System;
+using System.Net;
+using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.APIGatewayEvents;
-using System.Collections.Generic;
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DocumentModel;
 using Newtonsoft.Json;
 
 using Cloud.AWS.DynamoDb;
 using Lambda.Models;
+using Lambda.Handlers;
 
 namespace Lambda.Functions
 {
@@ -20,18 +24,42 @@ namespace Lambda.Functions
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
-        public APIGatewayProxyResponse Run(APIGatewayProxyRequest request)
+        public async Task<APIGatewayProxyResponse> Run(APIGatewayProxyRequest request, ILambdaContext context)
         {
             var requestModel = JsonConvert.DeserializeObject<SaveItemRequest>(request.Body);
-            return new APIGatewayProxyResponse
+            var TableName = Environment.GetEnvironmentVariable("ITEM_TABLE_NAME");
+            try
             {
-                StatusCode = 200,
-                Body = JsonConvert.SerializeObject(requestModel),
-                Headers = new Dictionary<string, string>{
-                  { "Content-Type", "application/json" },
-                  { "Access-Control-Allow-Origin","*" }
-              }
-            };
+                using (var client = _dbService.DbClient)
+                {
+                    Table ItemTable;
+                    var loadTableSuccess = false;
+                    loadTableSuccess = Table.TryLoadTable(
+                        client,
+                        TableName,
+                        DynamoDBEntryConversion.V2, out ItemTable);
+                    if (loadTableSuccess)
+                    {
+                        var newItem = new Document();
+                        newItem["id"] = requestModel.Id;
+                        newItem["name"] = requestModel.Name;
+                        await ItemTable.PutItemAsync(newItem);
+                        return ResponseHandler.ProcessResponse(HttpStatusCode.Created, JsonConvert.SerializeObject(requestModel));
+                    }
+                    return ResponseHandler.ProcessResponse(HttpStatusCode.NotFound, $"Resource: {TableName} not found");
+                }
+            }
+            catch (Exception ex)
+            {
+                context.Logger.LogLine($"Error while saving Item: {requestModel}");
+                context.Logger.LogLine($"Error: {ex.StackTrace}");
+                return ResponseHandler.ProcessResponse(HttpStatusCode.InternalServerError, JsonConvert.SerializeObject(new ErrorBody
+                {
+                    Error = "Service Exception",
+                    Message = ex.Message
+                }));
+
+            }
         }
     }
 }

@@ -26,6 +26,7 @@ Globals:
           Ref: ItemTable
         DYNAMODB_SERVICEURL:
           Fn::Sub: https://dynamodb.${AWS::Region}.amazonaws.com
+        JWT_ACCESS_TOKEN: random hexa crypro
   Api:
     Auth:
       DefaultAuthorizer: basicAuthorizer
@@ -50,7 +51,7 @@ Resources:
       StageName:
         Ref: ApiStageName
       Models:
-        Item:
+        SaveItemRequestValidator:
           type: object
           required:
           - id
@@ -84,8 +85,10 @@ Resources:
       CodeUri: saveItemFunction
       Handler: sam-dnc::Lambda.Functions.SaveItemFunction::Run
       Description: Save Item
+      MemorySize: 512
+      Timeout: 120
       Policies:
-      - DynamoDBWritePolicy:
+      - DynamoDBCrudPolicy:
           TableName:
             Ref: ItemTable
       Events:
