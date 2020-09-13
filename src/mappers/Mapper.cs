@@ -23,5 +23,15 @@ namespace Lambda.Mappers
             };
         }
 
+        public static Document ToSaveItemDocumentModel(SaveItemRequest request)
+        {
+            return new Document
+            {
+                ["id"] = request.Id,
+                ["key"] = request.Key,
+                ["name"] = request.Name
+            };
+        }
+
     }
 }

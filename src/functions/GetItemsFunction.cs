@@ -47,7 +47,7 @@ namespace Lambda.Functions
                         var documentResponse = await ItemTable.Query(filter).GetRemainingAsync();
                         var queryResponse = Mapper.ToItemResponse(documentResponse);
                         
-                        return ResponseHandler.ProcessResponse(HttpStatusCode.Created, JsonConvert.SerializeObject(queryResponse));
+                        return ResponseHandler.ProcessResponse(HttpStatusCode.OK, JsonConvert.SerializeObject(queryResponse));
                     }
                     return ResponseHandler.ProcessResponse(HttpStatusCode.NotFound, $"Resource: {TableName} not found");
                 }

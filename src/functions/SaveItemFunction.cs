@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using Cloud.AWS.DynamoDb;
 using Lambda.Models;
 using Lambda.Handlers;
+using Lambda.Mappers;
 
 namespace Lambda.Functions
 {
@@ -40,10 +41,7 @@ namespace Lambda.Functions
                         DynamoDBEntryConversion.V2, out ItemTable);
                     if (loadTableSuccess)
                     {
-                        var newItem = new Document();
-                        newItem["id"] = requestModel.Id;
-                        newItem["key"] = requestModel.Key;
-                        newItem["name"] = requestModel.Name;
+                        var newItem = Mapper.ToSaveItemDocumentModel(requestModel);
                         await ItemTable.PutItemAsync(newItem);
                         return ResponseHandler.ProcessResponse(HttpStatusCode.Created, JsonConvert.SerializeObject(requestModel));
                     }
