@@ -71,6 +71,7 @@ Resources:
       CodeUri: getItemsFunction
       Handler: sam-dnc::Lambda.Functions.GetItemsFunction::Run
       Description: Query Items by id and key
+      Timeout: 120
       Policies:
       - DynamoDBReadPolicy:
           TableName:
@@ -89,7 +90,6 @@ Resources:
       CodeUri: saveItemFunction
       Handler: sam-dnc::Lambda.Functions.SaveItemFunction::Run
       Description: Save Item
-      MemorySize: 512
       Timeout: 120
       Policies:
       - DynamoDBCrudPolicy:
