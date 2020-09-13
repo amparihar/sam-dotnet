@@ -143,6 +143,6 @@ Outputs:
     Value: !Ref ItemTable
   ApiGateway:
     Description: "API EndPoint"
-    Value: !Sub "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}"
+    Value: !Sub "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/api"
 
 

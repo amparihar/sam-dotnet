@@ -147,4 +147,4 @@ Outputs:
   ApiGateway:
     Description: API EndPoint
     Value:
-      Fn::Sub: https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}
+      Fn::Sub: https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/api

@@ -17,27 +17,29 @@ namespace Lambda.Functions
 {
     public class SaveItemFunction
     {
-        private readonly DynamoDBService _dbService;
+        private DynamoDBService _dbService;
+
+        private readonly string _tableName = Environment.GetEnvironmentVariable("ITEM_TABLE_NAME");
 
         public SaveItemFunction()
         {
-            _dbService = new DynamoDBService();
+
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public async Task<APIGatewayProxyResponse> Run(APIGatewayProxyRequest request, ILambdaContext context)
         {
             var requestModel = JsonConvert.DeserializeObject<SaveItemRequest>(request.Body);
-            var TableName = Environment.GetEnvironmentVariable("ITEM_TABLE_NAME");
             try
             {
+                _dbService = new DynamoDBService();
                 using (var client = _dbService.DbClient)
                 {
                     Table ItemTable;
                     var loadTableSuccess = false;
                     loadTableSuccess = Table.TryLoadTable(
                         client,
-                        TableName,
+                        _tableName,
                         DynamoDBEntryConversion.V2, out ItemTable);
                     if (loadTableSuccess)
                     {
@@ -46,7 +48,7 @@ namespace Lambda.Functions
                         await ItemTable.PutItemAsync(newItem);
                         return ResponseHandler.ProcessResponse(HttpStatusCode.Created, JsonConvert.SerializeObject(requestModel));
                     }
-                    return ResponseHandler.ProcessResponse(HttpStatusCode.NotFound, $"Resource: {TableName} not found");
+                    return ResponseHandler.ProcessResponse(HttpStatusCode.NotFound, $"Resource: {_tableName} not found");
                 }
             }
             catch (AmazonDynamoDBException ddbEx)
