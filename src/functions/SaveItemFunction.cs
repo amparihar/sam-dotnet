@@ -41,12 +41,23 @@ namespace Lambda.Functions
                         DynamoDBEntryConversion.V2, out ItemTable);
                     if (loadTableSuccess)
                     {
+                        // TO DO: Use Extension method
                         var newItem = Mapper.ToSaveItemDocumentModel(requestModel);
                         await ItemTable.PutItemAsync(newItem);
                         return ResponseHandler.ProcessResponse(HttpStatusCode.Created, JsonConvert.SerializeObject(requestModel));
                     }
                     return ResponseHandler.ProcessResponse(HttpStatusCode.NotFound, $"Resource: {TableName} not found");
                 }
+            }
+            catch (AmazonDynamoDBException ddbEx)
+            {
+                context.Logger.LogLine($"DynamoDB Error while saving Item: {requestModel}");
+                context.Logger.LogLine($"DynamoDB Error: {ddbEx.StackTrace}");
+                return ResponseHandler.ProcessResponse(HttpStatusCode.InternalServerError, JsonConvert.SerializeObject(new ErrorBody
+                {
+                    Error = "DynamoDB Service Exception",
+                    Message = ddbEx.Message
+                }));
             }
             catch (Exception ex)
             {

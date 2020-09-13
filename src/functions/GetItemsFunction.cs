@@ -43,14 +43,26 @@ namespace Lambda.Functions
                     {
                         var filter = new QueryFilter("id", QueryOperator.Equal, requestModel.Id);
                         filter.AddCondition("key", QueryOperator.BeginsWith, requestModel.Key);
-                        
+
                         var documentResponse = await ItemTable.Query(filter).GetRemainingAsync();
+                        // TO DO: Use Extention Method 
+                        // Modify mapper functions as extension methods
                         var queryResponse = Mapper.ToItemResponse(documentResponse);
-                        
+
                         return ResponseHandler.ProcessResponse(HttpStatusCode.OK, JsonConvert.SerializeObject(queryResponse));
                     }
                     return ResponseHandler.ProcessResponse(HttpStatusCode.NotFound, $"Resource: {TableName} not found");
                 }
+            }
+            catch (AmazonDynamoDBException ddbEx)
+            {
+                context.Logger.LogLine($"DynamoDB Error while Querying Item: {requestModel}");
+                context.Logger.LogLine($"DynamoDB Error: {ddbEx.StackTrace}");
+                return ResponseHandler.ProcessResponse(HttpStatusCode.InternalServerError, JsonConvert.SerializeObject(new ErrorBody
+                {
+                    Error = "DynamoDB Service Exception",
+                    Message = ddbEx.Message
+                }));
             }
             catch (Exception ex)
             {
@@ -61,7 +73,6 @@ namespace Lambda.Functions
                     Error = "Service Exception",
                     Message = ex.Message
                 }));
-
             }
         }
     }
