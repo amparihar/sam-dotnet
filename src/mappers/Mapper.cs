@@ -8,12 +8,12 @@ namespace Lambda.Mappers
 {
     public class Mapper
     {
-        public static IEnumerable<ItemResponse> ToItemResponse(IEnumerable<Document> items)
+        public IEnumerable<ItemResponse> ToItemResponse(IEnumerable<Document> items)
         {
             return items.Select(ToItemResponse);
         }
 
-        public static ItemResponse ToItemResponse(Document doc)
+        public ItemResponse ToItemResponse(Document doc)
         {
             return new ItemResponse
             {
@@ -23,7 +23,7 @@ namespace Lambda.Mappers
             };
         }
 
-        public static Document ToSaveItemDocumentModel(SaveItemRequest request)
+        public Document ToSaveItemDocumentModel(SaveItemRequest request)
         {
             return new Document
             {

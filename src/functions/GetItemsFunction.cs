@@ -5,25 +5,23 @@ using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.APIGatewayEvents;
 using Amazon.DynamoDBv2;
-using Amazon.DynamoDBv2.DocumentModel;
 using Newtonsoft.Json;
-using Cloud.AWS.DynamoDb;
 
 using Lambda.Models;
 using Lambda.Handlers;
-using Lambda.Mappers;
+using Item.Service;
 
 namespace Lambda.Functions
 {
     public class GetItemsFunction
     {
-        private readonly DynamoDBService _dbService;
+        private readonly IItemService _itemService;
 
         private readonly string _tableName = Environment.GetEnvironmentVariable("ITEM_TABLE_NAME");
 
         public GetItemsFunction()
         {
-            _dbService = new DynamoDBService();
+            _itemService = new ItemService();
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
@@ -32,24 +30,10 @@ namespace Lambda.Functions
             var requestModel = JsonConvert.DeserializeObject<GetItemRequest>(request.Body);
             try
             {
-                var client = _dbService.DbClient;
-                Table ItemTable;
-                var loadTableSuccess = false;
-                loadTableSuccess = Table.TryLoadTable(
-                    client,
-                    _tableName,
-                    DynamoDBEntryConversion.V2, out ItemTable);
-                if (loadTableSuccess)
+                var result = await _itemService.GetItems(requestModel.Id, requestModel.Key);
+                if (result != null)
                 {
-                    var filter = new QueryFilter("id", QueryOperator.Equal, requestModel.Id);
-                    filter.AddCondition("key", QueryOperator.BeginsWith, requestModel.Key);
-
-                    var documentResponse = await ItemTable.Query(filter).GetRemainingAsync();
-                    // TO DO: Use Extention Method 
-                    // Modify mapper functions as extension methods
-                    var queryResponse = Mapper.ToItemResponse(documentResponse);
-
-                    return ResponseHandler.ProcessResponse(HttpStatusCode.OK, JsonConvert.SerializeObject(queryResponse));
+                    return ResponseHandler.ProcessResponse(HttpStatusCode.OK, JsonConvert.SerializeObject(result));
                 }
                 return ResponseHandler.ProcessResponse(HttpStatusCode.NotFound, $"Resource: {_tableName} not found");
             }

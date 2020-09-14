@@ -5,25 +5,23 @@ using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.APIGatewayEvents;
 using Amazon.DynamoDBv2;
-using Amazon.DynamoDBv2.DocumentModel;
 using Newtonsoft.Json;
 
-using Cloud.AWS.DynamoDb;
 using Lambda.Models;
 using Lambda.Handlers;
-using Lambda.Mappers;
+using Item.Service;
 
 namespace Lambda.Functions
 {
     public class SaveItemFunction
     {
-        private readonly DynamoDBService _dbService;
+        private readonly IItemService _itemService;
 
         private readonly string _tableName = Environment.GetEnvironmentVariable("ITEM_TABLE_NAME");
 
         public SaveItemFunction()
         {
-            _dbService = new DynamoDBService();
+            _itemService = new ItemService();
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
@@ -32,19 +30,10 @@ namespace Lambda.Functions
             var requestModel = JsonConvert.DeserializeObject<SaveItemRequest>(request.Body);
             try
             {
-                var client = _dbService.DbClient;
-                Table ItemTable;
-                var loadTableSuccess = false;
-                loadTableSuccess = Table.TryLoadTable(
-                    client,
-                    _tableName,
-                    DynamoDBEntryConversion.V2, out ItemTable);
-                if (loadTableSuccess)
+                var result = await _itemService.SaveItem(requestModel);
+                if (result != null)
                 {
-                    // TO DO: Use Extension method
-                    var newItem = Mapper.ToSaveItemDocumentModel(requestModel);
-                    await ItemTable.PutItemAsync(newItem);
-                    return ResponseHandler.ProcessResponse(HttpStatusCode.Created, JsonConvert.SerializeObject(requestModel));
+                    return ResponseHandler.ProcessResponse(HttpStatusCode.Created, JsonConvert.SerializeObject(result));
                 }
                 return ResponseHandler.ProcessResponse(HttpStatusCode.NotFound, $"Resource: {_tableName} not found");
             }
