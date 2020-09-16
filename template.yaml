@@ -77,6 +77,8 @@ Resources:
       Policies: 
         - DynamoDBReadPolicy:
             TableName: !Ref ItemTable
+        - SSMParameterReadPolicy:
+            ParameterName: !Sub "sam-dnc-boilerplate/${ApiStageName}"
       Events:
         Api:
           Type: Api
@@ -95,6 +97,8 @@ Resources:
       Policies: 
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
+        - SSMParameterReadPolicy:
+            ParameterName: !Sub "sam-dnc-boilerplate/${ApiStageName}"
       Events:
         Api:
           Type: Api
@@ -111,6 +115,13 @@ Resources:
     Properties:
       CodeUri: ./src/
       Handler: sam-dnc::Lambda.Functions.Authorizer::Authorize
+
+  ssmSimpleParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/sam-dnc-boilerplate/${ApiStageName}/authToken"
+      Type: String #ssm parameters of type securestring cannot be created using cloudformation
+      Value: any unencrypted simple string value 
 
   ItemTable:
     Type: AWS::DynamoDB::Table

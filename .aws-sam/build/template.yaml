@@ -76,6 +76,9 @@ Resources:
       - DynamoDBReadPolicy:
           TableName:
             Ref: ItemTable
+      - SSMParameterReadPolicy:
+          ParameterName:
+            Fn::Sub: sam-dnc-boilerplate/${ApiStageName}
       Events:
         Api:
           Type: Api
@@ -95,6 +98,9 @@ Resources:
       - DynamoDBCrudPolicy:
           TableName:
             Ref: ItemTable
+      - SSMParameterReadPolicy:
+          ParameterName:
+            Fn::Sub: sam-dnc-boilerplate/${ApiStageName}
       Events:
         Api:
           Type: Api
@@ -108,6 +114,13 @@ Resources:
     Properties:
       CodeUri: lambdaAuthorizer
       Handler: sam-dnc::Lambda.Functions.Authorizer::Authorize
+  ssmSimpleParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name:
+        Fn::Sub: /sam-dnc-boilerplate/${ApiStageName}/authToken
+      Type: String
+      Value: any unencrypted simple string value
   ItemTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
