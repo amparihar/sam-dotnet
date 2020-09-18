@@ -1,17 +1,15 @@
 
 using System;
 using System.Net;
+using System.Text;
+using System.IO;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
-using Amazon.Lambda.APIGatewayEvents;
-using Amazon.DynamoDBv2;
 using Newtonsoft.Json;
 
 using Lambda.Models;
 using Lambda.Handlers;
 using Item.Service;
-using System.Text;
-using System.IO;
 
 namespace Lambda.Functions
 {

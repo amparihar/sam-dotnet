@@ -39,8 +39,8 @@ namespace Lambda.Functions
             }
             catch (AmazonDynamoDBException ddbEx)
             {
-                context.Logger.LogLine($"DynamoDB Error while Querying Item: {requestModel}");
-                context.Logger.LogLine($"DynamoDB Error: {ddbEx.StackTrace}");
+                LogHandler.LogMessage(context, $"DynamoDB Error while Querying Item: {requestModel}");
+                LogHandler.LogMessage(context, $"DynamoDB Error: {ddbEx.StackTrace}");
                 return ResponseHandler.ProcessResponse(HttpStatusCode.InternalServerError, JsonConvert.SerializeObject(new ErrorBody
                 {
                     Error = "DynamoDB Service Exception",
@@ -49,8 +49,8 @@ namespace Lambda.Functions
             }
             catch (Exception ex)
             {
-                context.Logger.LogLine($"Error while Querying Item: {requestModel}");
-                context.Logger.LogLine($"Error: {ex.StackTrace}");
+                LogHandler.LogMessage(context, $"Error while Querying Item: {requestModel}");
+                LogHandler.LogMessage(context, $"Error: {ex.StackTrace}");
                 return ResponseHandler.ProcessResponse(HttpStatusCode.InternalServerError, JsonConvert.SerializeObject(new ErrorBody
                 {
                     Error = "Service Exception",
