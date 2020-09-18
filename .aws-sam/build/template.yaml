@@ -114,6 +114,20 @@ Resources:
     Properties:
       CodeUri: lambdaAuthorizer
       Handler: sam-dnc::Lambda.Functions.Authorizer::Authorize
+  initDynamoDBFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: initDynamoDBFunction
+      Handler: sam-dnc::Lambda.Functions.InitDynamoDBFunction::Run
+      Description: Seed DynamoDb Data
+      Timeout: 120
+  initDynamoDB:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - initDynamoDBFunction
+        - Arn
   ssmSimpleParameter:
     Type: AWS::SSM::Parameter
     Properties:
