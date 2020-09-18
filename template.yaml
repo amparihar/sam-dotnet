@@ -18,6 +18,10 @@ Parameters:
       - prod
     Description: Stage Param
 
+  SeedItems:
+    Type: List<String>
+    Description: Seed Item Values
+
 Globals:
   Function:
     Runtime: dotnetcore3.1
@@ -129,11 +133,18 @@ Resources:
             TableName: !Ref ItemTable
         - SSMParameterReadPolicy:
             ParameterName: !Sub "sam-dnc-boilerplate/${ApiStageName}"
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:DeleteTable
+            Resource:
+              - !GetAtt ItemTable.Arn
   
   initDynamoDB:
     Type: 'AWS::CloudFormation::CustomResource'
     Properties:
-      ServiceToken: !GetAtt initDynamoDBFunction.Arn 
+      ServiceToken: !GetAtt initDynamoDBFunction.Arn
+      SeedData: !Ref SeedItems 
 
   ssmSimpleParameter:
     Type: AWS::SSM::Parameter

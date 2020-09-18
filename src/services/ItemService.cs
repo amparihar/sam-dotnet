@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
+using DynamoDBv2Model = Amazon.DynamoDBv2.Model;
 using Cloud.AWS.DynamoDb;
 
 using Lambda.Mappers;
@@ -54,6 +55,15 @@ namespace Item.Service
             }
             return null;
         }
-        
+
+        public async Task DeleteTable(string tableName)
+        {
+            var request = new DynamoDBv2Model.DeleteTableRequest
+            {
+                TableName = tableName
+            };
+            await _dbService.DbClient.DeleteTableAsync(request);
+        }
+
     }
 }

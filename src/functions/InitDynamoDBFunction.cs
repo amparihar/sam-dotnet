@@ -69,6 +69,7 @@ namespace Lambda.Functions
         {
             LogHandler.LogMessage(context, cfnRequest.ToString());
             var request = JsonConvert.DeserializeObject<CfnRequest>(cfnRequest.ToString());
+            LogHandler.LogMessage(context, JsonConvert.SerializeObject(request));
 
             var response = new CfnResponse
             {
@@ -84,11 +85,30 @@ namespace Lambda.Functions
                 case "Create":
                     await CreateSeed(request, response, context);
                     break;
+                case "Delete":
+                    await DeleteTable(request, response, context);
+                    break;
                 default:
                     response.Status = "SUCCESS";
                     break;
             }
             SendResponse(request, response);
+        }
+
+        async Task DeleteTable(CfnRequest cfnRequest, CfnResponse cfnResponse, ILambdaContext context)
+        {
+            try
+            {
+                await _itemService.DeleteTable(_tableName);
+                cfnResponse.Status = "SUCCESS";
+                LogHandler.LogMessage(context, $"Request ${cfnRequest.RequestType} executed Successfully");
+            }
+            catch (Exception ex)
+            {
+                cfnResponse.Status = "FAILED";
+                cfnResponse.Reason = ex.Message;
+                LogHandler.LogMessage(context, $"{ex.Message}-{ex.StackTrace}");
+            }
         }
 
         async Task CreateSeed(CfnRequest cfnRequest, CfnResponse cfnResponse, ILambdaContext context)

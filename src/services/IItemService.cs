@@ -11,5 +11,7 @@ namespace Item.Service
 
         Task<SaveItemRequest> SaveItem(SaveItemRequest request);
 
+        Task DeleteTable(string tableName);
+
     }
 }
