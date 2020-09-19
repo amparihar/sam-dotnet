@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Amazon.DynamoDBv2;
@@ -51,6 +52,21 @@ namespace Item.Service
             {
                 var newItem = _map.ToSaveItemDocumentModel(request);
                 await _table.PutItemAsync(newItem);
+                return request;
+            }
+            return null;
+        }
+
+        public async Task<IEnumerable<SaveItemRequest>> BatchWrite(IEnumerable<SaveItemRequest> request)
+        {
+            if (_loadTableSuccess)
+            {
+                var batchWrite = _table.CreateBatchWrite();
+                request.ToList().ForEach(doc => {
+                    var newItem = _map.ToSaveItemDocumentModel(doc);
+                    batchWrite.AddDocumentToPut(newItem);
+                });
+                await batchWrite.ExecuteAsync();
                 return request;
             }
             return null;

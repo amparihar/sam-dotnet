@@ -11,6 +11,8 @@ namespace Item.Service
 
         Task<SaveItemRequest> SaveItem(SaveItemRequest request);
 
+        Task<IEnumerable<SaveItemRequest>> BatchWrite(IEnumerable<SaveItemRequest> request);
+
         Task DeleteTable(string tableName);
 
     }

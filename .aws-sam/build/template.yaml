@@ -136,8 +136,9 @@ Resources:
           Action:
           - dynamodb:DeleteTable
           Resource:
-          - Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/!Ref
-              ItemTable
+          - Fn::GetAtt:
+            - ItemTable
+            - Arn
   initDynamoDB:
     Type: AWS::CloudFormation::CustomResource
     Properties:

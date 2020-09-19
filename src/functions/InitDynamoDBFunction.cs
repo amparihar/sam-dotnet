@@ -3,6 +3,7 @@ using System;
 using System.Net;
 using System.Text;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Newtonsoft.Json;
@@ -10,6 +11,7 @@ using Newtonsoft.Json;
 using Lambda.Models;
 using Lambda.Handlers;
 using Item.Service;
+using System.Collections.Generic;
 
 namespace Lambda.Functions
 {
@@ -33,6 +35,7 @@ namespace Lambda.Functions
         public string DatabaseName { get; set; }
         public string Engine { get; set; }
         public string GlobalClusterIdentifier { get; set; }
+        public IEnumerable<string> SeedData { get; set; }
     }
 
     // Reference
@@ -67,8 +70,8 @@ namespace Lambda.Functions
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public async Task Run(object cfnRequest, ILambdaContext context)
         {
-            LogHandler.LogMessage(context, cfnRequest.ToString());
             var request = JsonConvert.DeserializeObject<CfnRequest>(cfnRequest.ToString());
+
             LogHandler.LogMessage(context, JsonConvert.SerializeObject(request));
 
             var response = new CfnResponse
@@ -86,41 +89,31 @@ namespace Lambda.Functions
                     await CreateSeed(request, response, context);
                     break;
                 case "Delete":
+                    // should be used when table DeletionPolicy is Retain
                     await DeleteTable(request, response, context);
                     break;
                 default:
                     response.Status = "SUCCESS";
                     break;
             }
-            SendResponse(request, response);
-        }
-
-        async Task DeleteTable(CfnRequest cfnRequest, CfnResponse cfnResponse, ILambdaContext context)
-        {
-            try
-            {
-                await _itemService.DeleteTable(_tableName);
-                cfnResponse.Status = "SUCCESS";
-                LogHandler.LogMessage(context, $"Request ${cfnRequest.RequestType} executed Successfully");
-            }
-            catch (Exception ex)
-            {
-                cfnResponse.Status = "FAILED";
-                cfnResponse.Reason = ex.Message;
-                LogHandler.LogMessage(context, $"{ex.Message}-{ex.StackTrace}");
-            }
+            SendResponseToCfn(request, response);
         }
 
         async Task CreateSeed(CfnRequest cfnRequest, CfnResponse cfnResponse, ILambdaContext context)
         {
             try
             {
-                var result = await _itemService.SaveItem(new SaveItemRequest
+                var request = cfnRequest.ResourceProperties.SeedData.Select(seed =>
                 {
-                    Id = "U1",
-                    Name = "This is a custom data inserted using a custom resource",
-                    Key = "Seed Data Key"
+                    return new SaveItemRequest
+                    {
+                        Id = "U1",
+                        Name = "This is a custom data inserted using a custom resource",
+                        Key = seed
+                    };
                 });
+
+                var result = await _itemService.BatchWrite(request);
                 if (result != null)
                 {
                     // TO DO : use immer. do not mutate!!!
@@ -145,8 +138,24 @@ namespace Lambda.Functions
             }
         }
 
+        async Task DeleteTable(CfnRequest cfnRequest, CfnResponse cfnResponse, ILambdaContext context)
+        {
+            try
+            {
+                await _itemService.DeleteTable(_tableName);
+                cfnResponse.Status = "SUCCESS";
+                LogHandler.LogMessage(context, $"Request ${cfnRequest.RequestType} executed Successfully");
+            }
+            catch (Exception ex)
+            {
+                cfnResponse.Status = "FAILED";
+                cfnResponse.Reason = ex.Message;
+                LogHandler.LogMessage(context, $"Message: {ex.Message} /Trace: {ex.StackTrace}");
+            }
+        }
+
         // Explicit call to cfn ResponseURL to confirm creation of custom resource
-        void SendResponse(CfnRequest cfnRequest, CfnResponse cfnResponse)
+        void SendResponseToCfn(CfnRequest cfnRequest, CfnResponse cfnResponse)
         {
             string json = JsonConvert.SerializeObject(cfnResponse);
             byte[] byteArray = Encoding.UTF8.GetBytes(json);

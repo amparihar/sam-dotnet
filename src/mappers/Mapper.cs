@@ -23,6 +23,11 @@ namespace Lambda.Mappers
             };
         }
 
+        public IEnumerable<Document> ToSaveItemDocumentModel(IEnumerable<SaveItemRequest> request)
+        {
+            return request.Select(ToSaveItemDocumentModel);
+        }
+
         public Document ToSaveItemDocumentModel(SaveItemRequest request)
         {
             return new Document
@@ -32,6 +37,5 @@ namespace Lambda.Mappers
                 ["name"] = request.Name
             };
         }
-
     }
 }
