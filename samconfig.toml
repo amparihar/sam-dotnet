@@ -8,5 +8,5 @@ s3_prefix = "sam-dnc-boilerplate-stack-dev"
 region = "ap-south-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "ServiceName=\"sam-items-api\" ApiStageName=\"dev\" SeedItems=\"Key1, Key2\""
+parameter_overrides = "ServiceName=\"sam-items-api\" ApiStageName=\"dev\" SeedItems=\"Key1,Key2\""
 

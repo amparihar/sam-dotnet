@@ -42,7 +42,7 @@ namespace Lambda.Functions
     // https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/crpg-ref-responses.html
     public class CfnResponse
     {
-        public string Status { get; set; }
+        public string Status { get; set; } = "SUCCESS";
         public string Reason { get; set; }
         public string PhysicalResourceId { get; set; }
         public string StackId { get; set; }
@@ -103,7 +103,12 @@ namespace Lambda.Functions
         {
             try
             {
-                var request = cfnRequest.ResourceProperties.SeedData.Select(seed =>
+                var seedData = cfnRequest.ResourceProperties.SeedData;
+                if (seedData == null ||
+                    seedData.Count() == 0 ||
+                    (seedData.Count() == 1 && string.IsNullOrEmpty(seedData.First())))
+                    return;
+                var request = seedData.Select(seed =>
                 {
                     return new SaveItemRequest
                     {
