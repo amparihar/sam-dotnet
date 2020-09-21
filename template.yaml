@@ -193,6 +193,9 @@ Resources:
         WriteCapacityUnits: 1
 
 Outputs:
+  InitDynamoDBFunction:
+    Description: Seed Db
+    Value: !GetAtt initDynamoDBFunction.Arn
   GetItemsFunction:
     Description: "Query Items Fn ARN"
     Value: !GetAtt getItemsFunction.Arn

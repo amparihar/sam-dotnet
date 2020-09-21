@@ -196,6 +196,12 @@ Resources:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
 Outputs:
+  InitDynamoDBFunction:
+    Description: Seed Db
+    Value:
+      Fn::GetAtt:
+      - initDynamoDBFunction
+      - Arn
   GetItemsFunction:
     Description: Query Items Fn ARN
     Value:

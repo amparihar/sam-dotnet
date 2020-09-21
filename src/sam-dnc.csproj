@@ -12,6 +12,8 @@
     <PackageReference Include="Amazon.Lambda.Serialization.Json" Version="1.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.5.0" />
+    <PackageReference Include="Immutable.Net" Version="1.2.0" />
+    <PackageReference Include="Immutable.Net.Serialization.Newtonsoft" Version="1.2.0" />
   </ItemGroup>
 </Project>
 

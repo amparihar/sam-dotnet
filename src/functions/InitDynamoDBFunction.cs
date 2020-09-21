@@ -5,13 +5,15 @@ using System.Text;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Amazon.Lambda.Core;
 using Newtonsoft.Json;
+using ImmutableNet;
+using ImmutableDotNet.Serialization.Newtonsoft;
 
 using Lambda.Models;
 using Lambda.Handlers;
 using Item.Service;
-using System.Collections.Generic;
 
 namespace Lambda.Functions
 {
@@ -74,7 +76,7 @@ namespace Lambda.Functions
 
             LogHandler.LogMessage(context, JsonConvert.SerializeObject(request));
 
-            var response = new CfnResponse
+            var response = Immutable.Create(new CfnResponse
             {
                 StackId = request.StackId,
                 RequestId = request.RequestId,
@@ -82,24 +84,25 @@ namespace Lambda.Functions
                 PhysicalResourceId = $"{context.AwsRequestId}.{request.LogicalResourceId}",
                 Reason = string.Empty, // Mandatory if status is FAILED
                 NoEcho = false
-            };
+            });
+            Immutable<CfnResponse> cfnResponse;
             switch (request.RequestType)
             {
                 case "Create":
-                    await CreateSeed(request, response, context);
+                    cfnResponse = await CreateSeed(request, response, context);
                     break;
                 case "Delete":
                     // should be used when table DeletionPolicy is Retain
-                    await DeleteTable(request, response, context);
+                    cfnResponse = await DeleteTable(request, response, context);
                     break;
                 default:
-                    response.Status = "SUCCESS";
+                    cfnResponse = response.Modify(r => r.Status = "SUCCESS");
                     break;
             }
-            SendResponseToCfn(request, response);
+            SendResponseToCfn(request, cfnResponse);
         }
 
-        async Task CreateSeed(CfnRequest cfnRequest, CfnResponse cfnResponse, ILambdaContext context)
+        async Task<Immutable<CfnResponse>> CreateSeed(CfnRequest cfnRequest, Immutable<CfnResponse> cfnResponse, ILambdaContext context)
         {
             try
             {
@@ -107,7 +110,8 @@ namespace Lambda.Functions
                 if (seedData == null ||
                     seedData.Count() == 0 ||
                     (seedData.Count() == 1 && string.IsNullOrEmpty(seedData.First())))
-                    return;
+                    return cfnResponse;
+
                 var request = seedData.Select(seed =>
                 {
                     return new SaveItemRequest
@@ -121,48 +125,54 @@ namespace Lambda.Functions
                 var result = await _itemService.BatchWrite(request);
                 if (result != null)
                 {
-                    // TO DO : use immer. do not mutate!!!
-                    cfnResponse.Status = "SUCCESS";
-                    LogHandler.LogMessage(context, "Data Seeded Successfully");
-
+                    LogHandler.LogMessage(context, "Db seeding successful");
+                    return cfnResponse.Modify(r => r.Status = "SUCCESS");
                 }
                 else
                 {
-                    // TO DO : use immer. do not mutate!!!
-                    cfnResponse.Status = "FAILED";
-                    cfnResponse.Reason = $"Resource: {_tableName} not found";
-                    LogHandler.LogMessage(context, "Data Seed Failed");
+                    LogHandler.LogMessage(context, "Db seeding failed");
+                    return cfnResponse.ToBuilder()
+                        .Modify(r => r.Status = "FAILED")
+                        .Modify(r => r.Reason = $"Resource: {_tableName} not found")
+                        .ToImmutable();
                 }
             }
             catch (Exception ex)
             {
-                // TO DO : use immer. do not mutate!!!
-                cfnResponse.Status = "FAILED";
-                cfnResponse.Reason = ex.Message;
                 LogHandler.LogMessage(context, ex.StackTrace);
+                return cfnResponse.ToBuilder()
+                        .Modify(r => r.Status = "FAILED")
+                        .Modify(r => r.Reason = ex.Message)
+                        .ToImmutable();
             }
         }
 
-        async Task DeleteTable(CfnRequest cfnRequest, CfnResponse cfnResponse, ILambdaContext context)
+        async Task<Immutable<CfnResponse>> DeleteTable(CfnRequest cfnRequest, Immutable<CfnResponse> cfnResponse, ILambdaContext context)
         {
             try
             {
                 await _itemService.DeleteTable(_tableName);
-                cfnResponse.Status = "SUCCESS";
                 LogHandler.LogMessage(context, $"Request ${cfnRequest.RequestType} executed Successfully");
+                return cfnResponse.Modify(r => r.Status = "SUCCESS");
             }
             catch (Exception ex)
             {
-                cfnResponse.Status = "FAILED";
-                cfnResponse.Reason = ex.Message;
                 LogHandler.LogMessage(context, $"Message: {ex.Message} /Trace: {ex.StackTrace}");
+                return cfnResponse.ToBuilder()
+                        .Modify(r => r.Status = "FAILED")
+                        .Modify(r => r.Reason = ex.Message)
+                        .ToImmutable();
             }
         }
 
         // Explicit call to cfn ResponseURL to confirm creation of custom resource
-        void SendResponseToCfn(CfnRequest cfnRequest, CfnResponse cfnResponse)
+        void SendResponseToCfn(CfnRequest cfnRequest, Immutable<CfnResponse> cfnResponse)
         {
-            string json = JsonConvert.SerializeObject(cfnResponse);
+            var serializerSettings = new JsonSerializerSettings();
+            serializerSettings.Converters.Add(new ImmutableJsonConverter());
+
+            string json = JsonConvert.SerializeObject(cfnResponse, serializerSettings);
+
             byte[] byteArray = Encoding.UTF8.GetBytes(json);
 
             var httpRequest = WebRequest.Create(cfnRequest.ResponseURL) as HttpWebRequest;

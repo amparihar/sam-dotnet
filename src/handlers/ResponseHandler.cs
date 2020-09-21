@@ -25,8 +25,7 @@ namespace Lambda.Handlers
             return new APIGatewayProxyResponse
             {
                 StatusCode = (int)code,
-                Body = (body != null) ?
-                    JsonConvert.SerializeObject(body) : string.Empty,
+                Body = (body != null) ? JsonConvert.SerializeObject(body) : string.Empty,
                 Headers = new Dictionary<string, string>
                 {
                     { "Content-Type", "application/json" },
