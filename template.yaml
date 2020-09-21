@@ -39,7 +39,7 @@ Globals:
         Authorizers:
           basicAuthorizer:
             FunctionPayloadType: TOKEN
-            FunctionArn: !GetAtt lambdaAuthorizer.Arn
+            FunctionArn: !GetAtt lambdaAuthorizerFunction.Arn
             Identity:
               Header: Authorization
               #ValidationExpression: Bearer *
@@ -91,6 +91,11 @@ Resources:
             Method: POST
             RestApiId: !Ref ApiGatewayApi
 
+  getItemsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${getItemsFunction}"
+
   saveItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -114,12 +119,21 @@ Resources:
             #   Model: SaveItemRequestValidator
             #   Required: True
 
-  lambdaAuthorizer:
+  saveItemFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${saveItemFunction}"
+
+  lambdaAuthorizerFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./src/
       Handler: sam-dnc::Lambda.Functions.Authorizer::Authorize
-      
+
+  lambdaAuthorizerFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${lambdaAuthorizerFunction}"
 
   initDynamoDBFunction:
     Type: 'AWS::Serverless::Function'
@@ -139,9 +153,15 @@ Resources:
               - dynamodb:DeleteTable
             Resource:
               - !GetAtt ItemTable.Arn
+
+  initDynamoDBFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${initDynamoDBFunction}"
   
   initDynamoDB:
     Type: 'AWS::CloudFormation::CustomResource'
+    DependsOn: initDynamoDBFunction
     Properties:
       ServiceToken: !GetAtt initDynamoDBFunction.Arn
       SeedData: !Ref SeedItems 

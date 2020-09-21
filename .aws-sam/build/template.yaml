@@ -39,7 +39,7 @@ Globals:
           FunctionPayloadType: TOKEN
           FunctionArn:
             Fn::GetAtt:
-            - lambdaAuthorizer
+            - lambdaAuthorizerFunction
             - Arn
           Identity:
             Header: Authorization
@@ -90,6 +90,11 @@ Resources:
             Method: POST
             RestApiId:
               Ref: ApiGatewayApi
+  getItemsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${getItemsFunction}
   saveItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -112,11 +117,21 @@ Resources:
             Method: POST
             RestApiId:
               Ref: ApiGatewayApi
-  lambdaAuthorizer:
+  saveItemFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${saveItemFunction}
+  lambdaAuthorizerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdaAuthorizer
+      CodeUri: lambdaAuthorizerFunction
       Handler: sam-dnc::Lambda.Functions.Authorizer::Authorize
+  lambdaAuthorizerFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${lambdaAuthorizerFunction}
   initDynamoDBFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -139,8 +154,14 @@ Resources:
           - Fn::GetAtt:
             - ItemTable
             - Arn
+  initDynamoDBFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${initDynamoDBFunction}
   initDynamoDB:
     Type: AWS::CloudFormation::CustomResource
+    DependsOn: initDynamoDBFunction
     Properties:
       ServiceToken:
         Fn::GetAtt:
