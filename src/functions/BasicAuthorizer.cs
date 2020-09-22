@@ -1,32 +1,13 @@
 
 using System;
 using Amazon.Lambda.Core;
-using Newtonsoft.Json;
 
 using APIGateway.Auth;
 using APIGateway.Auth.Model;
 
 namespace Lambda.Functions
 {
-    public class TokenAuthorizerContext
-    {
-        [JsonProperty(PropertyName = "Type")]
-        public string Type { get; set; }
-
-        [JsonProperty(PropertyName = "AuthorizationToken")]
-        public string AuthorizationToken { get; set; }
-
-        [JsonProperty(PropertyName = "MethodArn")]
-        public string MethodArn { get; set; }
-    }
-
-    internal class UnauthorizedException : System.Exception
-    {
-        public UnauthorizedException() : base("Unauthorized")
-        {
-        }
-    }
-    public class Authorizer
+    public class BasicAuthorizer
     {
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public AuthPolicy Authorize(TokenAuthorizerContext input, ILambdaContext context)
@@ -54,7 +35,7 @@ namespace Lambda.Functions
 
                 // additional context key-value pairs. "principalId" is implicitly passed in as a key-value pair
                 // context values are  available by APIGW in : context.Authorizer.<key>
-                authResponse.Context.Add("userName","my-user-name");
+                authResponse.Context.Add("userName", "my-user-name");
                 return authResponse;
             }
             catch (Exception ex)

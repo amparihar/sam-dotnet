@@ -30,6 +30,7 @@ Globals:
     Environment:
       Variables:
         ITEM_TABLE_NAME: !Ref ItemTable
+        USER_TABLE_NAME: !Ref UserTable
         DYNAMODB_SERVICEURL: !Sub https://dynamodb.${AWS::Region}.amazonaws.com
         JWT_ACCESS_TOKEN: random hexa crypro 
   Api:
@@ -39,7 +40,7 @@ Globals:
         Authorizers:
           basicAuthorizer:
             FunctionPayloadType: TOKEN
-            FunctionArn: !GetAtt lambdaAuthorizerFunction.Arn
+            FunctionArn: !GetAtt basicLambdaAuthorizerFunction.Arn
             Identity:
               Header: Authorization
               #ValidationExpression: Bearer *
@@ -50,7 +51,8 @@ Globals:
 
 
 Resources:
-  ApiGatewayApi:
+
+  ProtectedApiGatewayApi:
     Type: AWS::Serverless::Api
     Properties:
       StageName: !Ref ApiStageName
@@ -89,7 +91,9 @@ Resources:
           Properties:
             Path: /api/query
             Method: POST
-            RestApiId: !Ref ApiGatewayApi
+            RestApiId: !Ref ProtectedApiGatewayApi
+            # Auth:
+            #   Authorizer: NONE
 
   getItemsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -114,7 +118,7 @@ Resources:
           Properties:
             Path: /api
             Method: POST
-            RestApiId: !Ref ApiGatewayApi
+            RestApiId: !Ref ProtectedApiGatewayApi
             # RequestModel:
             #   Model: SaveItemRequestValidator
             #   Required: True
@@ -124,16 +128,16 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${saveItemFunction}"
 
-  lambdaAuthorizerFunction:
+  basicLambdaAuthorizerFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./src/
-      Handler: sam-dnc::Lambda.Functions.Authorizer::Authorize
+      Handler: sam-dnc::Lambda.Functions.BasicAuthorizer::Authorize
 
-  lambdaAuthorizerFunctionLogGroup:
+  basicLambdaAuthorizerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${lambdaAuthorizerFunction}"
+      LogGroupName: !Sub "/aws/lambda/${basicLambdaAuthorizerFunction}"
 
   initDynamoDBFunction:
     Type: 'AWS::Serverless::Function'
@@ -192,6 +196,21 @@ Resources:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
 
+  UserTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub "${ServiceName}-user-${ApiStageName}"
+      AttributeDefinitions:
+        - AttributeName: username
+          AttributeType: S
+      KeySchema:
+        - AttributeName: username
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
 Outputs:
   InitDynamoDBFunction:
     Description: Seed Db
@@ -207,6 +226,6 @@ Outputs:
     Value: !Ref ItemTable
   ApiGateway:
     Description: "API EndPoint"
-    Value: !Sub "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/api"
+    Value: !Sub "https://${ProtectedApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/api"
 
 
