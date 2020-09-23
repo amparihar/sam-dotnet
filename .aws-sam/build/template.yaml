@@ -27,8 +27,6 @@ Globals:
       Variables:
         ITEM_TABLE_NAME:
           Ref: ItemTable
-        USER_TABLE_NAME:
-          Ref: UserTable
         DYNAMODB_SERVICEURL:
           Fn::Sub: https://dynamodb.${AWS::Region}.amazonaws.com
         JWT_ACCESS_TOKEN: random hexa crypro
@@ -92,8 +90,6 @@ Resources:
             Method: POST
             RestApiId:
               Ref: ProtectedApiGatewayApi
-            Auth:
-              Authorizer: NONE
   getItemsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -199,21 +195,6 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
-  UserTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    Properties:
-      TableName:
-        Fn::Sub: ${ServiceName}-user-${ApiStageName}
-      AttributeDefinitions:
-      - AttributeName: username
-        AttributeType: S
-      KeySchema:
-      - AttributeName: username
-        KeyType: HASH
-      ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
 Outputs:
   InitDynamoDBFunction:
     Description: Seed Db
@@ -241,3 +222,9 @@ Outputs:
     Description: API EndPoint
     Value:
       Fn::Sub: https://${ProtectedApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/api
+    Export:
+      Name:
+        Fn::Join:
+        - ':'
+        - - Ref: AWS::StackName
+          - ApiGateway

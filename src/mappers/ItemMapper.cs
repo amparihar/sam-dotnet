@@ -6,7 +6,7 @@ using Lambda.Models;
 
 namespace Lambda.Mappers
 {
-    public class Mapper
+    public class ItemMapper
     {
         public IEnumerable<ItemResponse> ToItemResponse(IEnumerable<Document> items)
         {

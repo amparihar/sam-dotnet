@@ -18,11 +18,11 @@ namespace Item.Service
         private readonly Table _table;
         private bool _loadTableSuccess { get; set; }
         private readonly DynamoDBService _dbService;
-        private readonly Mapper _map;
+        private readonly ItemMapper _map;
         public ItemService()
         {
             _dbService = new DynamoDBService();
-            _map = new Mapper();
+            _map = new ItemMapper();
             _loadTableSuccess = Table.TryLoadTable(
                 _dbService.DbClient,
                 _tableName,
