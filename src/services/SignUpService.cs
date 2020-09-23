@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
+using DynamoDBv2Model = Amazon.DynamoDBv2.Model;
 
 using Cloud.AWS.DynamoDb;
 using Lambda.Mappers;
@@ -9,8 +10,7 @@ using Lambda.Models;
 
 namespace SignUp.Service
 {
-
-    public class SignUpService
+    public class SignUpService : ISignUpService
     {
         private readonly string _tableName = Environment.GetEnvironmentVariable("USER_TABLE_NAME");
         private readonly Table _table;
@@ -36,7 +36,15 @@ namespace SignUp.Service
             }
             return null;
         }
-    }
 
+        public async Task DeleteTable()
+        {
+            var request = new DynamoDBv2Model.DeleteTableRequest
+            {
+                TableName = _tableName
+            };
+            await _dbService.DbClient.DeleteTableAsync(request);
+        }
+    }
 
 }

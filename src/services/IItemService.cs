@@ -13,7 +13,7 @@ namespace Item.Service
 
         Task<IEnumerable<SaveItemRequest>> BatchWrite(IEnumerable<SaveItemRequest> request);
 
-        Task DeleteTable(string tableName);
+        Task DeleteTable();
 
     }
 }

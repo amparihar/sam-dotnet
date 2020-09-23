@@ -30,7 +30,7 @@ Globals:
     Environment:
       Variables:
         ITEM_TABLE_NAME: !Ref ItemTable
-        #USER_TABLE_NAME: !Ref UserTable
+        USER_TABLE_NAME: !Ref UserTable
         DYNAMODB_SERVICEURL: !Sub https://dynamodb.${AWS::Region}.amazonaws.com
         JWT_ACCESS_TOKEN: random hexa crypro 
   Api:
@@ -157,6 +157,7 @@ Resources:
               - dynamodb:DeleteTable
             Resource:
               - !GetAtt ItemTable.Arn
+              - !GetAtt UserTable.Arn
 
   initDynamoDBFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -196,20 +197,20 @@ Resources:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
 
-  # UserTable:
-  #   Type: AWS::DynamoDB::Table
-  #   #DeletionPolicy: Retain
-  #   Properties:
-  #     TableName: !Sub "${ServiceName}-user-${ApiStageName}"
-  #     AttributeDefinitions:
-  #       - AttributeName: username
-  #         AttributeType: S
-  #     KeySchema:
-  #       - AttributeName: username
-  #         KeyType: HASH
-  #     ProvisionedThroughput:
-  #       ReadCapacityUnits: 1
-  #       WriteCapacityUnits: 1
+  UserTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub "${ServiceName}-user-${ApiStageName}"
+      AttributeDefinitions:
+        - AttributeName: username
+          AttributeType: S
+      KeySchema:
+        - AttributeName: username
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
 
 Outputs:
   InitDynamoDBFunction:

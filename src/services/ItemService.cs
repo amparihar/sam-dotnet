@@ -62,7 +62,8 @@ namespace Item.Service
             if (_loadTableSuccess)
             {
                 var batchWrite = _table.CreateBatchWrite();
-                request.ToList().ForEach(doc => {
+                request.ToList().ForEach(doc =>
+                {
                     var newItem = _map.ToSaveItemDocumentModel(doc);
                     batchWrite.AddDocumentToPut(newItem);
                 });
@@ -72,11 +73,11 @@ namespace Item.Service
             return null;
         }
 
-        public async Task DeleteTable(string tableName)
+        public async Task DeleteTable()
         {
             var request = new DynamoDBv2Model.DeleteTableRequest
             {
-                TableName = tableName
+                TableName = _tableName
             };
             await _dbService.DbClient.DeleteTableAsync(request);
         }

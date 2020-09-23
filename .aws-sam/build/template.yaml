@@ -27,6 +27,8 @@ Globals:
       Variables:
         ITEM_TABLE_NAME:
           Ref: ItemTable
+        USER_TABLE_NAME:
+          Ref: UserTable
         DYNAMODB_SERVICEURL:
           Fn::Sub: https://dynamodb.${AWS::Region}.amazonaws.com
         JWT_ACCESS_TOKEN: random hexa crypro
@@ -192,6 +194,20 @@ Resources:
         KeyType: HASH
       - AttributeName: key
         KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  UserTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: ${ServiceName}-user-${ApiStageName}
+      AttributeDefinitions:
+      - AttributeName: username
+        AttributeType: S
+      KeySchema:
+      - AttributeName: username
+        KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
