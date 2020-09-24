@@ -14,7 +14,7 @@ using ImmutableDotNet.Serialization.Newtonsoft;
 using Lambda.Models;
 using Lambda.Handlers;
 using Item.Service;
-using SignUp.Service;
+using User.Service;
 
 namespace Lambda.Functions
 {
@@ -62,14 +62,14 @@ namespace Lambda.Functions
     public class InitDynamoDBFunction
     {
         private readonly IItemService _itemService;
-        private readonly ISignUpService _signUpService;
+        private readonly IUserService _userService;
 
         private readonly string _tableName = Environment.GetEnvironmentVariable("ITEM_TABLE_NAME");
 
         public InitDynamoDBFunction()
         {
             _itemService = new ItemService();
-            _signUpService = new SignUpService();
+            _userService = new UserService();
         }
 
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
@@ -155,7 +155,7 @@ namespace Lambda.Functions
             try
             {
                 await _itemService.DeleteTable();
-                await _signUpService.DeleteTable();
+                await _userService.DeleteTable();
                 LogHandler.LogMessage(context, $"Request {cfnRequest.RequestType} executed Successfully");
                 return cfnResponse.Modify(r => r.Status = "SUCCESS");
             }

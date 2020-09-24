@@ -134,6 +134,35 @@ Resources:
     Properties:
       LogGroupName:
         Fn::Sub: /aws/lambda/${basicLambdaAuthorizerFunction}
+  signUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: signUpFunction
+      Handler: sam-dnc::Lambda.Functions.SignUpFunction::Run
+      Description: SignUp
+      Timeout: 120
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: UserTable
+      - SSMParameterReadPolicy:
+          ParameterName:
+            Fn::Sub: sam-dnc-boilerplate/${ApiStageName}
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /api/signup/
+            Method: POST
+            RestApiId:
+              Ref: ProtectedApiGatewayApi
+            Auth:
+              Authorizer: NONE
+  signUpFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/${signUpFunction}
   initDynamoDBFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -155,6 +184,9 @@ Resources:
           Resource:
           - Fn::GetAtt:
             - ItemTable
+            - Arn
+          - Fn::GetAtt:
+            - UserTable
             - Arn
   initDynamoDBFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -199,6 +231,7 @@ Resources:
         WriteCapacityUnits: 1
   UserTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
     Properties:
       TableName:
         Fn::Sub: ${ServiceName}-user-${ApiStageName}

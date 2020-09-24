@@ -92,8 +92,7 @@ Resources:
             Path: /api/query
             Method: POST
             RestApiId: !Ref ProtectedApiGatewayApi
-            # Auth:
-            #   Authorizer: NONE
+            
 
   getItemsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -139,6 +138,33 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${basicLambdaAuthorizerFunction}"
 
+  signUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/
+      Handler: sam-dnc::Lambda.Functions.SignUpFunction::Run
+      Description: SignUp 
+      Timeout: 120
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserTable
+        - SSMParameterReadPolicy:
+            ParameterName: !Sub "sam-dnc-boilerplate/${ApiStageName}"
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /api/signup/
+            Method: POST
+            RestApiId: !Ref ProtectedApiGatewayApi
+            Auth:
+              Authorizer: NONE
+
+  signUpFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${signUpFunction}"
+            
   initDynamoDBFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
