@@ -1,5 +1,6 @@
 
 using System;
+using System.Linq;
 using Amazon.Lambda.Core;
 
 using APIGateway.Auth;
@@ -19,10 +20,16 @@ namespace Lambda.Functions
 
                 var principalId = "";
                 AuthPolicyBuilder policyBuilder;
-
-                if (bool.Parse(input.AuthorizationToken))
+                var tokenArr = input.AuthorizationToken?.Split(" ");
+                var brearer = tokenArr.FirstOrDefault().ToLower();
+                var token = tokenArr.LastOrDefault();
+                if (brearer == "bearer" && !string.IsNullOrEmpty(token))
                 {
-                    principalId = "user|u1";
+                    principalId = JwtHandler.GetClaim(token);
+                }
+
+                if (!string.IsNullOrEmpty(principalId))
+                {
                     policyBuilder = new AuthPolicyBuilder(principalId, null);
                     policyBuilder.AllowResources();
                 }
@@ -35,7 +42,7 @@ namespace Lambda.Functions
 
                 // additional context key-value pairs. "principalId" is implicitly passed in as a key-value pair
                 // context values are  available by APIGW in : context.Authorizer.<key>
-                authResponse.Context.Add("userName","my-user-name");
+                //authResponse.Context.Add("userName", "my-user-name");
                 return authResponse;
             }
             catch (Exception ex)

@@ -10,7 +10,7 @@ namespace User.Service
 
         Task<SignUpRequest> SignUp(SignUpRequest request);
 
-        Task<SignInRequest> SignIn(SignInRequest request);
+        Task<SignInResponse> SignIn(SignInRequest request);
 
         Task DeleteTable();
 

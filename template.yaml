@@ -32,15 +32,21 @@ Globals:
         ITEM_TABLE_NAME: !Ref ItemTable
         USER_TABLE_NAME: !Ref UserTable
         DYNAMODB_SERVICEURL: !Sub https://dynamodb.${AWS::Region}.amazonaws.com
-        JWT_ACCESS_TOKEN: random hexa crypro 
+        JWT_ACCESS_TOKEN: random-hexa-crypro 
   Api:
     Auth:
-        DefaultAuthorizer: basicAuthorizer
+        DefaultAuthorizer: jwtAuthorizer
         AddDefaultAuthorizerToCorsPreflight: false
         Authorizers:
           basicAuthorizer:
             FunctionPayloadType: TOKEN
-            FunctionArn: !GetAtt basicLambdaAuthorizerFunction.Arn
+            FunctionArn: !GetAtt basicAuthorizerFunction.Arn
+            Identity:
+              Header: Authorization
+              #ValidationExpression: Bearer *
+          jwtAuthorizer:
+            FunctionPayloadType: TOKEN
+            FunctionArn: !GetAtt jwtAuthorizerFunction.Arn
             Identity:
               Header: Authorization
               #ValidationExpression: Bearer *
@@ -49,9 +55,7 @@ Globals:
       AllowHeaders: "'*'"
       AllowOrigin: "'*'"
 
-
 Resources:
-
   ProtectedApiGatewayApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -127,16 +131,27 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${saveItemFunction}"
 
-  basicLambdaAuthorizerFunction:
+  basicAuthorizerFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./src/
       Handler: sam-dnc::Lambda.Functions.BasicAuthorizer::Authorize
 
-  basicLambdaAuthorizerFunctionLogGroup:
+  basicAuthorizerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${basicLambdaAuthorizerFunction}"
+      LogGroupName: !Sub "/aws/lambda/${basicAuthorizerFunction}"
+
+  jwtAuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/
+      Handler: sam-dnc::Lambda.Functions.JwtAuthorizer::Authorize
+
+  jwtAuthorizerFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${jwtAuthorizerFunction}"
 
   signUpFunction:
     Type: AWS::Serverless::Function
@@ -164,6 +179,33 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${signUpFunction}"
+
+  signInFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/
+      Handler: sam-dnc::Lambda.Functions.SignInFunction::Run
+      Description: SignIn
+      Timeout: 120
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserTable
+        - SSMParameterReadPolicy:
+            ParameterName: !Sub "sam-dnc-boilerplate/${ApiStageName}"
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /api/signin/
+            Method: POST
+            RestApiId: !Ref ProtectedApiGatewayApi
+            Auth:
+              Authorizer: NONE
+
+  signInFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${signInFunction}"
             
   initDynamoDBFunction:
     Type: 'AWS::Serverless::Function'

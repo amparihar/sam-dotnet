@@ -7,7 +7,7 @@ namespace Lambda.Handlers
 {
     public class ResponseHandler
     {
-        public static APIGatewayProxyResponse ProcessResponse(HttpStatusCode code, string body)
+        public static APIGatewayProxyResponse ProcessResponse(HttpStatusCode code, string body = "")
         {
             return new APIGatewayProxyResponse
             {

@@ -8,6 +8,7 @@ using BCryptNet = BCrypt.Net;
 
 using Lambda.Mappers;
 using Lambda.Models;
+using APIGateway.Auth;
 
 namespace User.Service
 {
@@ -28,19 +29,23 @@ namespace User.Service
                 DynamoDBEntryConversion.V2, out _table);
         }
 
-        public async Task<SignInRequest> SignIn(SignInRequest request)
+        public async Task<SignInResponse> SignIn(SignInRequest request)
         {
             if (_loadTableSuccess)
             {
                 var user = await _table.GetItemAsync(request.UserName);
                 if (user != null)
                 {
-                    var hash = user["password"];
-                    if (BCryptNet.BCrypt.Verify(request.Password, hash))
+                    if (BCryptNet.BCrypt.Verify(request.Password, user["password"]))
                     {
-                        return request;
+                        var token = generateJwtToken(user);
+                        return new SignInResponse(user["username"], token);
                     }
+                    // Invalid password
+                    return new SignInResponse();
                 }
+                // User not found
+                return new SignInResponse();
             }
             return null;
         }
@@ -63,6 +68,11 @@ namespace User.Service
                 TableName = _tableName
             };
             await _dbService.DbClient.DeleteTableAsync(request);
+        }
+
+        string generateJwtToken(Document user)
+        {
+            return JwtHandler.GenerateToken(user["id"].ToString());
         }
     }
 

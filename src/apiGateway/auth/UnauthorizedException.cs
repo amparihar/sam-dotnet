@@ -5,5 +5,10 @@ namespace APIGateway.Auth
         public UnauthorizedException() : base("Unauthorized")
         {
         }
+
+        public UnauthorizedException(string message) : base(message)
+        {
+
+        }
     }
 }
