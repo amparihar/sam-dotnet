@@ -1,4 +1,3 @@
-
 using System;
 using System.Linq;
 using Amazon.Lambda.Core;
@@ -13,16 +12,18 @@ namespace Lambda.Functions
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public AuthPolicy Authorize(TokenAuthorizerContext input, ILambdaContext context)
         {
+            AuthPolicy authPolicy;
+            AuthPolicyBuilder policyBuilder;
             try
             {
                 context.Logger.LogLine($"{nameof(input.AuthorizationToken)}: {input.AuthorizationToken}");
                 context.Logger.LogLine($"{nameof(input.MethodArn)}: {input.MethodArn}");
 
                 var principalId = "";
-                AuthPolicyBuilder policyBuilder;
                 var tokenArr = input.AuthorizationToken?.Split(" ");
                 var brearer = tokenArr.FirstOrDefault().ToLower();
                 var token = tokenArr.LastOrDefault();
+
                 if (brearer == "bearer" && !string.IsNullOrEmpty(token))
                 {
                     principalId = JwtHandler.GetClaim(token);
@@ -38,21 +39,27 @@ namespace Lambda.Functions
                     policyBuilder = new AuthPolicyBuilder(principalId, null);
                     policyBuilder.DenyResources();
                 }
-                var authResponse = policyBuilder.Build();
+                authPolicy = policyBuilder.Build();
 
                 // additional context key-value pairs. "principalId" is implicitly passed in as a key-value pair
                 // context values are  available by APIGW in : context.Authorizer.<key>
-                //authResponse.Context.Add("userName", "my-user-name");
-                return authResponse;
+                //authPolicy.Context.Add("userName", "my-user-name");
+                return authPolicy;
             }
             catch (Exception ex)
             {
-                if (ex is UnauthorizedException)
-                    throw;
                 context.Logger.LogLine(ex.ToString());
+                if (ex is UnauthorizedException)
+                {
+                    policyBuilder = new AuthPolicyBuilder("", null);
+                    policyBuilder.DenyResources();
+                    authPolicy = policyBuilder.Build();
+                    authPolicy.Context.Add("message", ex.Message);
+                    return authPolicy;
+                    throw;
+                }
                 throw new UnauthorizedException();
             }
         }
     }
-
 }

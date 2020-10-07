@@ -54,6 +54,12 @@ Globals:
       AllowMethods: "'*'"
       AllowHeaders: "'*'"
       AllowOrigin: "'*'"
+    # GatewayResponses:
+    #   ACCESS_DENIED:
+    #     StatusCode: 403
+    #     ResponseTemplates:
+    #       application/json: |
+    #         { "message": $context.authorizer.message }
 
 Resources:
   ProtectedApiGatewayApi:
